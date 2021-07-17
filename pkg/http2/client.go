@@ -46,7 +46,8 @@ type Client struct {
 	maxWindow     int32
 	currentWindow int32
 
-	adptCh chan ClientAdaptor
+	adptCh       chan ClientAdaptor
+	adptChClosed bool
 
 	writer chan *FrameHeader
 
@@ -166,6 +167,9 @@ func Handshake(preface bool, bw *bufio.Writer, st *Settings, maxWin int32) error
 }
 
 func (c *Client) Register(adaptr ClientAdaptor) {
+	if c.adptChClosed {
+		return
+	}
 	c.adptCh <- adaptr
 }
 
@@ -275,6 +279,7 @@ func (c *Client) handleStreams() {
 
 	defer func() {
 		close(c.adptCh)
+		c.adptChClosed = true
 	}()
 
 	var lastErr error
