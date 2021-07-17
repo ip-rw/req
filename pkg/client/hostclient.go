@@ -21,7 +21,7 @@ type CustomHostClient struct {
 	fasthttp.HostClient
 	ServerName string
 	PoolWrap   *pool.ItemWrap
-	//Conn net.Conn
+	Conn       net.Conn
 }
 
 func (hc *CustomHostClient) Release() {
@@ -33,7 +33,8 @@ func (hc *CustomHostClient) Release() {
 		//println(hc.Conn.Close())
 		//}
 		//hc.PoolWrap.Return()
-		hc = nil
+		hc.HostClient.
+			hc = nil
 		//hc.PoolWrap = nil
 	}
 }
@@ -47,6 +48,7 @@ func GetTransport(hc *CustomHostClient) (fasthttp.TransportFunc, error) {
 	if err != nil || uconn == nil {
 		return nil, err
 	}
+	hc.Conn = uconn
 	alpn := uconn.HandshakeState.ServerHello.AlpnProtocol
 	switch alpn {
 	case "h2":
@@ -56,7 +58,7 @@ func GetTransport(hc *CustomHostClient) (fasthttp.TransportFunc, error) {
 		}
 		return fasthttp2.Do(c2), nil
 	case "http/1.1", "":
-		uconn.Conn.Close()
+		uconn.Close()
 		return nil, nil
 	default:
 		return nil, errors.New(fmt.Sprintf("unsupported ALPN: %v\n", alpn))
@@ -78,7 +80,8 @@ func NewHostClient(addr string, sni string, tls bool) (*CustomHostClient, error)
 		HostClient: fasthttp.HostClient{
 			Addr:      addr,
 			TLSConfig: tlsCfg.Clone(),
-		}}
+		},
+	}
 	//h := clientpool.Borrow()
 	//hc := h.Item.(*CustomHostClient)
 	//hc.HostClient.SetMaxConns(1)
