@@ -98,6 +98,12 @@ func main() {
 }
 
 func getUrl(uri string) (*Response, error) {
+	defer func() {
+		if err := recover(); err != nil {
+			println(err)
+		}
+	}()
+
 	u, err := url.Parse(uri)
 	if err != nil {
 		return nil, err

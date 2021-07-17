@@ -167,9 +167,6 @@ func Handshake(preface bool, bw *bufio.Writer, st *Settings, maxWin int32) error
 }
 
 func (c *Client) Register(adaptr ClientAdaptor) {
-	if c.adptChClosed {
-		return
-	}
 	c.adptCh <- adaptr
 }
 
