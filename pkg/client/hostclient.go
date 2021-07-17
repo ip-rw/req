@@ -25,6 +25,11 @@ type CustomHostClient struct {
 }
 
 func (hc *CustomHostClient) Release() {
+	defer func() {
+		if err := recover(); err != nil {
+			println(err)
+		}
+	}()
 	if hc != nil {
 		hc.HostClient.CloseIdleConnections()
 		//hc.HostClient.Addr = ""
@@ -33,8 +38,10 @@ func (hc *CustomHostClient) Release() {
 		//println(hc.Conn.Close())
 		//}
 		//hc.PoolWrap.Return()
-		hc.HostClient.
-			hc = nil
+		if hc.Conn != nil {
+			hc.Conn.Close()
+		}
+		hc = nil
 		//hc.PoolWrap = nil
 	}
 }
