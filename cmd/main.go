@@ -55,7 +55,9 @@ func worker(stdin chan string, resultChan chan *Response) {
 			log.WithError(err).Debugf("%s failed", uri)
 			continue
 		}
-		resultChan <- res
+		if res != nil {
+			resultChan <- res
+		}
 	}
 }
 
