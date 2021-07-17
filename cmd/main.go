@@ -61,6 +61,9 @@ func worker(stdin chan string, resultChan chan *Response) {
 
 func output(resultChan chan *Response) {
 	for res := range resultChan {
+		if res.URL == nil {
+			res.URL = &url.URL{}
+		}
 		log.WithFields(log.Fields{
 			"URL":         res.URL,
 			"Code":        res.Code,
