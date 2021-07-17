@@ -152,6 +152,9 @@ func getUrl(uri string) (*Response, error) {
 	ti := titlePat.FindSubmatch(body)
 	title := ""
 	if ti != nil {
+		if len(ti[1]) > 50 {
+			ti[1] = ti[1][:50]
+		}
 		title = string(ti[1])
 	}
 	body = nil
