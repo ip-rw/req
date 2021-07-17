@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/ip-rw/req/pkg/client"
 	log "github.com/sirupsen/logrus"
-	"net/http"
+	"github.com/valyala/fasthttp"
 	"net/url"
 	"os"
 	"regexp"
@@ -112,30 +112,40 @@ func getUrl(uri string) (*Response, error) {
 	}
 
 	c, err := client.NewHostClient(fmt.Sprintf("%s:%s", u.Hostname(), port), "", u.Scheme == "https")
+	req := fasthttp.AcquireRequest()
+	res := fasthttp.AcquireResponse()
+	defer func(r *fasthttp.Request, rs *fasthttp.Response, cl *client.CustomHostClient) {
+		fasthttp.ReleaseRequest(r)
+		fasthttp.ReleaseResponse(rs)
+		cl.Release()
+	}(req, res, c)
+
+	res.Reset()
+	req.Header.SetMethod("GET")
+	req.URI().Update(u.String())
+
+	err = c.Do(req, res)
+	if err != nil {
+		return nil, err
+	}
+
+	body := res.Body()
 	if err != nil {
 		log.Debugln(err)
 		return nil, err
 	}
-	defer c.Release()
-	//fmt.Println(u, u.String())
-	code, body, err := c.Get(nil, u.String())
-	if err != nil {
-		log.Warnln(err)
-		return nil, err
-	}
 
-	mime := http.DetectContentType(body)
 	ti := titlePat.FindSubmatch(body)
 	title := ""
 	if ti != nil {
 		title = string(ti[1])
 	}
-
+	body = nil
 	return &Response{
 		URL:         u,
-		Code:        code,
-		Size:        len(body),
-		ContentType: mime,
+		Code:        res.StatusCode(),
+		Size:        res.Header.ContentLength(),
+		ContentType: string(res.Header.ContentType()),
 		Title:       title,
 		//Err:         err,
 	}, err
