@@ -112,6 +112,9 @@ func getUrl(uri string) (*Response, error) {
 	}
 
 	c, err := client.NewHostClient(fmt.Sprintf("%s:%s", u.Hostname(), port), "", u.Scheme == "https")
+	if err != nil {
+		return nil, err
+	}
 	req := fasthttp.AcquireRequest()
 	res := fasthttp.AcquireResponse()
 	defer func(r *fasthttp.Request, rs *fasthttp.Response, cl *client.CustomHostClient) {
@@ -120,7 +123,6 @@ func getUrl(uri string) (*Response, error) {
 		cl.Release()
 	}(req, res, c)
 
-	res.Reset()
 	req.Header.SetMethod("GET")
 	req.URI().Update(u.String())
 

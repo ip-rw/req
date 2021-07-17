@@ -10,7 +10,6 @@ import (
 	"github.com/rocketlaunchr/go-pool"
 	"github.com/valyala/fasthttp"
 	"net"
-	"time"
 )
 
 var (
@@ -22,22 +21,17 @@ type CustomHostClient struct {
 	fasthttp.HostClient
 	ServerName string
 	PoolWrap *pool.ItemWrap
+	Conn net.Conn
 }
 
 func (hc *CustomHostClient) Release() {
-	hc.HostClient.CloseIdleConnections()
-	rt := 5
-	for hc.HostClient.ConnsCount() > 0 && rt > 0 {
-		time.Sleep(50*time.Millisecond)
-		rt--
+	if hc != nil {
+		hc.HostClient.CloseIdleConnections()
+		hc.HostClient.Addr = ""
+		hc.HostClient.TLSConfig.ServerName = ""
+		hc.PoolWrap.Return()
+		hc.PoolWrap = nil
 	}
-	if hc.HostClient.ConnsCount() > 0 {
-		hc.PoolWrap.MarkAsInvalid()
-	}
-	hc.HostClient.Addr = ""
-	hc.HostClient.TLSConfig.ServerName = ""
-	hc.PoolWrap.Return()
-	hc.PoolWrap = nil
 }
 
 func GetTransport(hc *CustomHostClient) (fasthttp.TransportFunc, error) {
@@ -50,9 +44,13 @@ func GetTransport(hc *CustomHostClient) (fasthttp.TransportFunc, error) {
 	}
 	alpn := uconn.HandshakeState.ServerHello.AlpnProtocol
 	//fmt.Println(alpn)
+	hc.Conn = uconn
 	switch alpn {
 	case "h2":
-		c2, _ := http2.NewClient(uconn)
+		c2, err := http2.NewClient(uconn)
+		if err != nil {
+			return nil, err
+		}
 		return fasthttp2.Do(c2), nil
 	case "http/1.1", "":
 		return nil, nil
