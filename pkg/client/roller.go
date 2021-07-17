@@ -84,7 +84,7 @@ func (c *Roller) Dial(network, addr, serverName string) (*tls.UConn, error) {
 			return nil, err // on tcp Dial failure return with error right away
 		}
 
-		client := tls.UClient(tcpConn, nil, helloID)
+		client := tls.UClient(tcpConn, &tls.Config{InsecureSkipVerify: true}, helloID)
 		client.SetSNI(serverName)
 		client.SetDeadline(time.Now().Add(c.TlsHandshakeTimeout))
 		err = client.Handshake()
