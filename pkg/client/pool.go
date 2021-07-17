@@ -5,7 +5,7 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-var clientpool = NewHostClientPool(1000)
+var clientpool = NewHostClientPool(150)
 func NewHostClientPool(max int) pool.Pool {
 	pool := pool.New(max) // maximum of 5 items in pool
 	pool.SetFactory(func() interface{} {
