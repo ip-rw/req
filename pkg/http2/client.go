@@ -319,9 +319,10 @@ loop:
 
 			strm, ok := strms[fr.Stream()]
 			if !ok {
-				if c.writer == nil {
-					return
-				}
+				return
+				//if c.writer == nil {
+				//	return
+				//}
 				writeReset(
 					fr.Stream(), ProtocolError, c.writer)
 				continue
