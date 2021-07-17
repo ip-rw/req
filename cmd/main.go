@@ -124,6 +124,7 @@ func getUrl(uri string) (*Response, error) {
 	}(req, res, c)
 
 	req.Header.SetMethod("GET")
+	//req.SetConnectionClose()
 	req.URI().Update(u.String())
 
 	err = c.Do(req, res)

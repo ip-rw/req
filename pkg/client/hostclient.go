@@ -4,8 +4,8 @@ import (
 	tls2 "crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/ip-rw/http2"
-	"github.com/ip-rw/http2/fasthttp2"
+	"github.com/ip-rw/req/pkg/http2"
+	"github.com/ip-rw/req/pkg/http2/fasthttp2"
 	tls "github.com/refraction-networking/utls"
 	"github.com/rocketlaunchr/go-pool"
 	"github.com/valyala/fasthttp"
@@ -29,8 +29,11 @@ func (hc *CustomHostClient) Release() {
 		hc.HostClient.CloseIdleConnections()
 		hc.HostClient.Addr = ""
 		hc.HostClient.TLSConfig.ServerName = ""
+		//if hc.Conn != nil {
+			//println(hc.Conn.Close())
+		//}
 		hc.PoolWrap.Return()
-		hc.PoolWrap = nil
+		//hc.PoolWrap = nil
 	}
 }
 
