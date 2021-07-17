@@ -125,9 +125,8 @@ func getUrl(uri string) (*Response, error) {
 
 	req.Header.SetMethod("GET")
 	//res.SkipBody = true
-	req.SetConnectionClose()
+	//req.SetConnectionClose()
 	req.URI().Update(u.String())
-
 	err = c.DoRedirects(req, res, 12)
 	if err != nil {
 		return nil, err

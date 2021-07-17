@@ -14,25 +14,26 @@ import (
 
 var (
 	roller, _ = tls.NewRoller()
-	h2client = http2.Client{}
+	h2client  = http2.Client{}
 )
 
 type CustomHostClient struct {
 	fasthttp.HostClient
 	ServerName string
-	PoolWrap *pool.ItemWrap
-	Conn net.Conn
+	PoolWrap   *pool.ItemWrap
+	//Conn net.Conn
 }
 
 func (hc *CustomHostClient) Release() {
 	if hc != nil {
 		hc.HostClient.CloseIdleConnections()
-		hc.HostClient.Addr = ""
-		hc.HostClient.TLSConfig.ServerName = ""
+		//hc.HostClient.Addr = ""
+		//hc.HostClient.TLSConfig.ServerName = ""
 		//if hc.Conn != nil {
-			//println(hc.Conn.Close())
+		//println(hc.Conn.Close())
 		//}
-		hc.PoolWrap.Return()
+		//hc.PoolWrap.Return()
+		hc = nil
 		//hc.PoolWrap = nil
 	}
 }
@@ -41,13 +42,12 @@ func GetTransport(hc *CustomHostClient) (fasthttp.TransportFunc, error) {
 	if !hc.IsTLS {
 		return nil, nil
 	}
+
 	uconn, err := roller.Dial("tcp4", hc.Addr, hc.ServerName)
 	if err != nil || uconn == nil {
 		return nil, err
 	}
 	alpn := uconn.HandshakeState.ServerHello.AlpnProtocol
-	//fmt.Println(alpn)
-	hc.Conn = uconn
 	switch alpn {
 	case "h2":
 		c2, err := http2.NewClient(uconn)
@@ -56,25 +56,33 @@ func GetTransport(hc *CustomHostClient) (fasthttp.TransportFunc, error) {
 		}
 		return fasthttp2.Do(c2), nil
 	case "http/1.1", "":
+		uconn.Conn.Close()
 		return nil, nil
 	default:
 		return nil, errors.New(fmt.Sprintf("unsupported ALPN: %v\n", alpn))
 	}
 }
+
 var cache = tls2.NewLRUClientSessionCache(1000)
 var tlsCfg = &tls2.Config{
 	InsecureSkipVerify: true,
 	ClientSessionCache: cache,
-	Renegotiation: tls2.RenegotiateFreelyAsClient,
+	Renegotiation:      tls2.RenegotiateFreelyAsClient,
 }
 
 func NewHostClient(addr string, sni string, tls bool) (*CustomHostClient, error) {
 	if sni == "" {
 		sni, _, _ = net.SplitHostPort(addr)
 	}
-	h := clientpool.Borrow()
-	hc := h.Item.(*CustomHostClient)
-	hc.PoolWrap = h
+	hc := &CustomHostClient{
+		HostClient: fasthttp.HostClient{
+			Addr:      addr,
+			TLSConfig: tlsCfg.Clone(),
+		}}
+	//h := clientpool.Borrow()
+	//hc := h.Item.(*CustomHostClient)
+	//hc.HostClient.SetMaxConns(1)
+	//hc.PoolWrap = h
 	//hc := &h
 	hc.Addr = addr
 	hc.ServerName = sni
@@ -86,7 +94,7 @@ func NewHostClient(addr string, sni string, tls bool) (*CustomHostClient, error)
 	var err error
 	hc.Transport, err = GetTransport(hc)
 	if err != nil {
-		h.MarkAsInvalid()
+		//h.MarkAsInvalid()
 		hc.Release()
 		return nil, err
 	}
