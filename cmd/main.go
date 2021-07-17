@@ -124,10 +124,11 @@ func getUrl(uri string) (*Response, error) {
 	}(req, res, c)
 
 	req.Header.SetMethod("GET")
-	//req.SetConnectionClose()
+	//res.SkipBody = true
+	req.SetConnectionClose()
 	req.URI().Update(u.String())
 
-	err = c.Do(req, res)
+	err = c.DoRedirects(req, res, 12)
 	if err != nil {
 		return nil, err
 	}
@@ -153,5 +154,3 @@ func getUrl(uri string) (*Response, error) {
 		//Err:         err,
 	}, err
 }
-
-

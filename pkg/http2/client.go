@@ -183,8 +183,6 @@ func (c *Client) readLoop() {
 	for {
 		fr, err := ReadFrameFrom(c.br)
 		if err != nil {
-			c.inData <- fr
-			c.c.Close()
 			return
 		}
 
@@ -439,4 +437,3 @@ func writeError(strm *Stream, err error, writer chan<- *FrameHeader) {
 	writeReset(strm.ID(), code, writer)
 	strm.SetState(StreamStateClosed)
 }
-
