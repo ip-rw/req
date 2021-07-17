@@ -178,6 +178,7 @@ func (c *Client) readLoop() {
 		// TODO: fix race conditions
 		close(c.writer)
 		close(c.inData)
+		c.writer = nil
 	}()
 
 	for {
@@ -318,6 +319,9 @@ loop:
 
 			strm, ok := strms[fr.Stream()]
 			if !ok {
+				if c.writer == nil {
+					return
+				}
 				writeReset(
 					fr.Stream(), ProtocolError, c.writer)
 				continue
